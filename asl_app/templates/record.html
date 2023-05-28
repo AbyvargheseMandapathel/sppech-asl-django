@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Recording Data</h2>
+  <p>Press 'q' to stop recording.</p>
+  <div id="video-container"></div>
+
+  <form method="post" action="{% url 'record' %}">
+    {% csrf_token %}
+    <label for="title">Title:</label>
+    <input type="text" id="title" name="title" required>
+    <button type="submit">Start Recording</button>
+  </form>
+  
+
+  <script>
+    let videoStream;
+    const videoContainer = document.getElementById('video-container');
+    const titleInput = document.getElementById('title');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function(stream) {
+        videoStream = stream;
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+        videoContainer.appendChild(video);
+        startRecording();
+      })
+      .catch(function(err) {
+        console.log('Error accessing webcam:', err);
+      });
+
+    function startRecording() {
+      const chunks = [];
+      const mediaRecorder = new MediaRecorder(videoStream);
+
+      mediaRecorder.ondataavailable = function(event) {
+        chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = function() {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const videoUrl = URL.createObjectURL(blob);
+        const videoPreview = document.createElement('video');
+        videoPreview.src = videoUrl;
+        videoPreview.controls = true;
+        videoContainer.innerHTML = '';
+        videoContainer.appendChild(videoPreview);
+        const videoFile = new File([blob], 'recorded_video.webm');
+        const formData = new FormData();
+        formData.append('title', titleInput.value);
+        formData.append('video', videoFile);
+        fetch('{% url "save_recorded_video" %}', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Video saved:', data);
+        })
+        .catch(error => {
+          console.error('Error saving video:', error);
+        });
+      };
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'q' || event.key === 'Q') {
+          mediaRecorder.stop();
+        }
+      });
+
+      mediaRecorder.start();
+    }
+  </script>
+{% endblock %}

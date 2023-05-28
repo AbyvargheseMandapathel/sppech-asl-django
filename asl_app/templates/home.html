@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL App</title>
+</head>
+<body>
+    <h1>ASL App</h1>
+
+    <div>
+        <h2>Video Feed</h2>
+        <video id="video-feed" width="640" height="480" autoplay></video>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <p id="output-text"></p>
+    </div>
+
+    <script>
+        // Get the video feed element
+        const videoFeed = document.getElementById('video-feed');
+
+        // Get the output text element
+        const outputText = document.getElementById('output-text');
+
+        // Function to start the video stream
+        function startVideoStream() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    videoFeed.srcObject = stream;
+                })
+                .catch((error) => {
+                    console.error('Error accessing webcam:', error);
+                });
+        }
+
+        // Function to stop the video stream
+        function stopVideoStream() {
+            const stream = videoFeed.srcObject;
+            const tracks = stream.getTracks();
+
+            tracks.forEach((track) => {
+                track.stop();
+            });
+
+            videoFeed.srcObject = null;
+        }
+
+        // Start the video stream when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            startVideoStream();
+        });
+
+        // Stop the video stream when the page is unloaded
+        window.addEventListener('beforeunload', () => {
+            stopVideoStream();
+        });
+    </script>
+</body>
+</html>
